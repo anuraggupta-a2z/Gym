@@ -479,9 +479,18 @@ function showHistory() {
                 })
                 .filter(Boolean);
 
+            if (session.type === 'cardio') {
+                return `
+                    <div class="history-item">
+                        <div class="history-date">🏃 ${dateStr}</div>
+                        <div class="history-stats">Zone 2: ${session.stats.zone2}m • Vigorous: ${session.stats.vigorous}m</div>
+                    </div>
+                `;
+            }
+
             return `
                 <div class="history-item">
-                    <div class="history-date">${dateStr}</div>
+                    <div class="history-date">💪 ${dateStr}</div>
                     <div class="history-stats">${session.completed.length} exercises completed</div>
                     ${weightEntries.length > 0 ? `
                         <div class="history-exercises">${weightEntries.join(' • ')}</div>
