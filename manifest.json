@@ -2,7 +2,7 @@
     "name": "Blueprint Strength",
     "short_name": "Blueprint",
     "description": "Track your Blueprint Strength workouts",
-    "start_url": "/",
+    "start_url": ".",
     "display": "standalone",
     "background_color": "#0a0a0f",
     "theme_color": "#0a0a0f",
