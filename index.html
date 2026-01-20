@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#0a0a0f">
+    <title>Blueprint Strength</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="icon.svg">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+    <div class="app-container">
+        <header class="header">
+            <h1>Blueprint Strength</h1>
+            <div class="date" id="currentDate"></div>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+            <div class="progress-text" id="progressText">0 / 22 exercises</div>
+        </header>
+
+        <main class="workout-sections" id="workoutSections">
+            <!-- Sections will be dynamically generated -->
+        </main>
+
+        <div class="actions">
+            <button class="btn btn-primary" id="saveWorkout">
+                <span class="btn-icon">💾</span>
+                Save Workout
+            </button>
+            <button class="btn btn-secondary" id="viewHistory">
+                <span class="btn-icon">📊</span>
+                History
+            </button>
+        </div>
+
+        <!-- History Modal -->
+        <div class="modal" id="historyModal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>Workout History</h2>
+                    <button class="modal-close" id="closeHistory">&times;</button>
+                </div>
+                <div class="modal-body" id="historyList">
+                    <!-- History will be dynamically generated -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+
+</html>

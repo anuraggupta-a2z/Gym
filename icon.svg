@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="192" height="192" viewBox="0 0 192 192">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1e3a8a"/>
+      <stop offset="100%" style="stop-color:#7c3aed"/>
+    </linearGradient>
+    <linearGradient id="bar" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#60a5fa"/>
+      <stop offset="100%" style="stop-color:#a78bfa"/>
+    </linearGradient>
+  </defs>
+  <rect width="192" height="192" rx="40" fill="url(#bg)"/>
+  <!-- Barbell -->
+  <rect x="40" y="88" width="112" height="16" rx="8" fill="url(#bar)"/>
+  <!-- Left weight -->
+  <rect x="28" y="64" width="24" height="64" rx="6" fill="#fff" opacity="0.9"/>
+  <!-- Right weight -->
+  <rect x="140" y="64" width="24" height="64" rx="6" fill="#fff" opacity="0.9"/>
+  <!-- Small accent weights -->
+  <rect x="52" y="76" width="12" height="40" rx="4" fill="#fff" opacity="0.6"/>
+  <rect x="128" y="76" width="12" height="40" rx="4" fill="#fff" opacity="0.6"/>
+</svg>
