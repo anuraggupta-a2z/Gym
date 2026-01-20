@@ -417,30 +417,33 @@ function saveCardio() {
         .filter(([_, val]) => val)
         .map(([key]) => key);
 
-    if (completedItems.length === 0 && cardioState.zone2Minutes === 0) {
-        showToast('Track something first!');
+    if (completedItems.length === 0) {
+        showToast('Complete at least one item first!');
         return;
     }
+
+    const zone2Credit = 37;
+    const vigorousCredit = 12;
 
     const session = {
         type: 'cardio',
         date: new Date().toISOString(),
         completed: completedItems,
         stats: {
-            zone2: cardioState.zone2Minutes,
-            vigorous: cardioState.vigorousMinutes
+            zone2: zone2Credit,
+            vigorous: vigorousCredit
         }
     };
 
     // Update weekly stats
-    weeklyStats.zone2 += cardioState.zone2Minutes;
-    weeklyStats.vigorous += cardioState.vigorousMinutes;
+    weeklyStats.zone2 += zone2Credit;
+    weeklyStats.vigorous += vigorousCredit;
     localStorage.setItem('blueprint-weekly', JSON.stringify(weeklyStats));
 
     history.push(session);
     localStorage.setItem('blueprint-history', JSON.stringify(history));
 
-    // Reset cardio checkmarks but leave minutes for ease
+    // Reset cardio checkmarks
     cardioChecklist.forEach(item => {
         cardioState.completed[item.id] = false;
     });
