@@ -41,13 +41,32 @@ const categories = {
 // State
 let workoutState = {};
 let history = [];
+let weeklyStats = {
+    zone2: 0,
+    vigorous: 0,
+    weekStart: null
+};
+
+// Cardio Protocol
+const cardioChecklist = [
+    { id: 'cardio-warmup', name: 'Warmup (10 min)', type: 'warmup' },
+    { id: 'cardio-int-1', name: 'Interval 1 (4m Hard / 4m Easy)', type: 'interval' },
+    { id: 'cardio-int-2', name: 'Interval 2 (4m Hard / 4m Easy)', type: 'interval' },
+    { id: 'cardio-int-3', name: 'Interval 3 (4m Hard / 4m Easy)', type: 'interval' },
+    { id: 'cardio-zone2', name: 'Steady Zone 2 (25 min)', type: 'steady' }
+];
+
+let cardioState = {
+    completed: {},
+    zone2Minutes: 37,
+    vigorousMinutes: 12
+};
+
 
 // Initialize app
 document.addEventListener('DOMContentLoaded', () => {
     loadState();
-    renderExercises();
-    updateProgress();
-    updateDate();
+    renderApp();
     setupEventListeners();
     registerServiceWorker();
 });
@@ -58,7 +77,16 @@ function loadState() {
         history = JSON.parse(savedHistory);
     }
 
-    // Initialize workout state from last session's weights
+    // Load weekly stats
+    const savedWeekly = localStorage.getItem('blueprint-weekly');
+    if (savedWeekly) {
+        weeklyStats = JSON.parse(savedWeekly);
+        checkWeeklyReset();
+    } else {
+        resetWeeklyStats();
+    }
+
+    // Initialize strength state
     exercises.forEach(ex => {
         workoutState[ex.id] = {
             completed: false,
@@ -66,6 +94,33 @@ function loadState() {
             reps: ''
         };
     });
+
+    // Initialize cardio state
+    cardioChecklist.forEach(item => {
+        cardioState.completed[item.id] = false;
+    });
+}
+
+function checkWeeklyReset() {
+    const now = new Date();
+    const lastReset = new Date(weeklyStats.weekStart);
+    const day = now.getDay(); // 0 is Sunday, 1 is Monday
+
+    // Reset if it's Monday and we haven't reset today
+    if (day === 1 && now.toDateString() !== lastReset.toDateString()) {
+        if (now > lastReset) { // Ensure time moved forward
+            resetWeeklyStats();
+        }
+    }
+}
+
+function resetWeeklyStats() {
+    weeklyStats = {
+        zone2: 0,
+        vigorous: 0,
+        weekStart: new Date().toISOString()
+    };
+    localStorage.setItem('blueprint-weekly', JSON.stringify(weeklyStats));
 }
 
 function getLastData(exerciseId) {
@@ -81,8 +136,49 @@ function getLastData(exerciseId) {
     return null;
 }
 
-function renderExercises() {
-    const container = document.getElementById('workoutSections');
+const SCHEDULE = {
+    0: 'Rest', // Sunday
+    1: 'Strength', // Monday
+    2: 'Cardio', // Tuesday
+    3: 'Strength', // Wednesday
+    4: 'Cardio', // Thursday
+    5: 'Strength', // Friday
+    6: 'Cardio' // Saturday
+};
+
+function renderApp(mode = null) {
+    if (!mode) {
+        const day = new Date().getDay();
+        mode = SCHEDULE[day].toLowerCase();
+    }
+
+    document.body.dataset.mode = mode;
+
+    // Update active tab buttons
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.mode === mode);
+    });
+
+    const sections = document.getElementById('workoutSections');
+    sections.innerHTML = '';
+
+    if (mode === 'strength') {
+        renderStrength(sections);
+        document.getElementById('saveWorkout').onclick = saveStrength;
+        document.getElementById('saveWorkout').style.display = 'flex';
+    } else if (mode === 'cardio') {
+        renderCardio(sections);
+        document.getElementById('saveWorkout').onclick = saveCardio;
+        document.getElementById('saveWorkout').style.display = 'flex';
+    } else {
+        renderRest(sections);
+        document.getElementById('saveWorkout').style.display = 'none';
+    }
+
+    updateDashboard();
+}
+
+function renderStrength(container) {
     container.innerHTML = '';
 
     Object.keys(categories).forEach(categoryKey => {
@@ -142,6 +238,68 @@ function renderExercises() {
 
         container.appendChild(section);
     });
+
+    // Sync checkboxes
+    document.querySelectorAll('#workoutSections input[type="checkbox"]').forEach(cb => {
+        cb.checked = workoutState[cb.dataset.id].completed;
+        if (cb.checked) cb.closest('.exercise').classList.add('completed');
+    });
+}
+
+function renderCardio(container) {
+    container.innerHTML = `
+        <div class="section">
+            <div class="section-header">
+                <span class="section-icon">🏃</span>
+                <span class="section-title">Protocol</span>
+            </div>
+            
+            ${cardioChecklist.map(item => `
+                <div class="exercise ${cardioState.completed[item.id] ? 'completed' : ''}" data-id="${item.id}">
+                    <label class="checkbox-wrapper">
+                        <input type="checkbox" data-id="${item.id}" ${cardioState.completed[item.id] ? 'checked' : ''}>
+                        <span class="checkbox-custom"></span>
+                    </label>
+                    <div class="exercise-info">
+                        <div class="exercise-name">${item.name}</div>
+                    </div>
+                </div>
+            `).join('')}
+
+            <div class="cardio-inputs">
+                <h3>Session Data</h3>
+                <div class="cardio-input-row">
+                    <label>Zone 2 Minutes</label>
+                    <input type="number" id="zone2Input" value="${cardioState.zone2Minutes}">
+                </div>
+                <div class="cardio-input-row">
+                    <label>Vigorous Minutes</label>
+                    <input type="number" id="vigorousInput" value="${cardioState.vigorousMinutes}">
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function renderRest(container) {
+    container.innerHTML = `
+        <div class="rest-view">
+            <div class="rest-icon">😴</div>
+            <h2>Rest Day</h2>
+            <p>Recover and prepare for the next session.</p>
+        </div>
+    `;
+}
+
+function updateDashboard() {
+    document.getElementById('zone2Progress').textContent = `${weeklyStats.zone2} / 150 min`;
+    document.getElementById('vigorousProgress').textContent = `${weeklyStats.vigorous} / 75 min`;
+
+    const z2Percent = Math.min(100, (weeklyStats.zone2 / 150) * 100);
+    const vigPercent = Math.min(100, (weeklyStats.vigorous / 75) * 100);
+
+    document.getElementById('zone2Bar').style.width = `${z2Percent}%`;
+    document.getElementById('vigorousBar').style.width = `${vigPercent}%`;
 }
 
 function updateProgress() {
@@ -164,9 +322,31 @@ function setupEventListeners() {
     document.getElementById('workoutSections').addEventListener('change', (e) => {
         if (e.target.type === 'checkbox') {
             const id = e.target.dataset.id;
-            workoutState[id].completed = e.target.checked;
+            const isCardio = document.body.dataset.mode === 'cardio';
+
+            if (isCardio) {
+                cardioState.completed[id] = e.target.checked;
+            } else {
+                workoutState[id].completed = e.target.checked;
+                updateProgress();
+            }
             e.target.closest('.exercise').classList.toggle('completed', e.target.checked);
-            updateProgress();
+        }
+    });
+
+    // Tab Buttons
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            renderApp(btn.dataset.mode);
+        });
+    });
+
+    // Cardio Inputs
+    document.getElementById('workoutSections').addEventListener('input', (e) => {
+        if (e.target.id === 'zone2Input') {
+            cardioState.zone2Minutes = parseInt(e.target.value) || 0;
+        } else if (e.target.id === 'vigorousInput') {
+            cardioState.vigorousMinutes = parseInt(e.target.value) || 0;
         }
     });
 
@@ -181,8 +361,8 @@ function setupEventListeners() {
         }
     });
 
-    // Save workout
-    document.getElementById('saveWorkout').addEventListener('click', saveWorkout);
+    // Save btn logic handled in renderApp
+
 
     // History modal
     document.getElementById('viewHistory').addEventListener('click', showHistory);
@@ -192,7 +372,7 @@ function setupEventListeners() {
     });
 }
 
-function saveWorkout() {
+function saveStrength() {
     const completedExercises = exercises.filter(ex => workoutState[ex.id].completed);
 
     if (completedExercises.length === 0) {
@@ -213,6 +393,7 @@ function saveWorkout() {
     });
 
     const session = {
+        type: 'strength',
         date: new Date().toISOString(),
         completed: completedExercises.map(ex => ex.id),
         weights: weights,
@@ -227,9 +408,45 @@ function saveWorkout() {
         workoutState[ex.id] = { completed: false, weight: '', reps: '' };
     });
 
-    renderExercises();
-    updateProgress();
-    showToast('Workout saved! 💪');
+    renderApp('strength');
+    showToast('Strength workout saved! 💪');
+}
+
+function saveCardio() {
+    const completedItems = Object.entries(cardioState.completed)
+        .filter(([_, val]) => val)
+        .map(([key]) => key);
+
+    if (completedItems.length === 0 && cardioState.zone2Minutes === 0) {
+        showToast('Track something first!');
+        return;
+    }
+
+    const session = {
+        type: 'cardio',
+        date: new Date().toISOString(),
+        completed: completedItems,
+        stats: {
+            zone2: cardioState.zone2Minutes,
+            vigorous: cardioState.vigorousMinutes
+        }
+    };
+
+    // Update weekly stats
+    weeklyStats.zone2 += cardioState.zone2Minutes;
+    weeklyStats.vigorous += cardioState.vigorousMinutes;
+    localStorage.setItem('blueprint-weekly', JSON.stringify(weeklyStats));
+
+    history.push(session);
+    localStorage.setItem('blueprint-history', JSON.stringify(history));
+
+    // Reset cardio checkmarks but leave minutes for ease
+    cardioChecklist.forEach(item => {
+        cardioState.completed[item.id] = false;
+    });
+
+    renderApp('cardio');
+    showToast('Cardio session saved! 🏃');
 }
 
 function showHistory() {

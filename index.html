@@ -13,19 +13,50 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css?v=3">
+    <link rel="stylesheet" href="styles.css?v=4">
 </head>
 
 <body>
     <div class="app-container">
-        <header class="header">
-            <h1>Blueprint Strength</h1>
+        <!-- Dashboard -->
+        <div class="dashboard">
             <div class="date" id="currentDate"></div>
+
+            <div class="weekly-goals">
+                <div class="goal-item">
+                    <div class="goal-label">
+                        <span>Zone 2</span>
+                        <span id="zone2Progress">0 / 150 min</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="zone2Bar"></div>
+                    </div>
+                </div>
+                <div class="goal-item">
+                    <div class="goal-label">
+                        <span>Vigorous</span>
+                        <span id="vigorousProgress">0 / 75 min</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="vigorousBar"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tabs">
+                <button class="tab-btn" data-mode="strength">Strength</button>
+                <button class="tab-btn" data-mode="cardio">Cardio</button>
+                <button class="tab-btn" data-mode="rest">Rest</button>
+            </div>
+        </div>
+
+        <!-- Strength Progress (Only visible in Strength mode) -->
+        <div class="strength-progress" id="strengthProgress">
             <div class="progress-bar">
                 <div class="progress-fill" id="progressFill"></div>
             </div>
             <div class="progress-text" id="progressText">0 / 22 exercises</div>
-        </header>
+        </div>
 
         <main class="workout-sections" id="workoutSections">
             <!-- Sections will be dynamically generated -->
@@ -56,7 +87,7 @@
         </div>
     </div>
 
-    <script src="app.js?v=3"></script>
+    <script src="app.js?v=4"></script>
 </body>
 
 </html>
