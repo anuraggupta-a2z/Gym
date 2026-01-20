@@ -171,7 +171,7 @@ body {
     justify-content: center;
 }
 
-.checkbox-wrapper input:checked + .checkbox-custom {
+.checkbox-wrapper input:checked+.checkbox-custom {
     background: var(--gradient-success);
     border-color: transparent;
 }
@@ -186,7 +186,7 @@ body {
     transition: all 0.2s ease;
 }
 
-.checkbox-wrapper input:checked + .checkbox-custom::after {
+.checkbox-wrapper input:checked+.checkbox-custom::after {
     opacity: 1;
     transform: scale(1);
 }
@@ -221,14 +221,17 @@ body {
     color: var(--accent-green);
 }
 
-/* Weight Input */
-.weight-input-wrapper {
+/* Inputs */
+.input-group {
+    display: flex;
+    align-items: center;
+    gap: 4px;
     flex-shrink: 0;
 }
 
 .weight-input {
-    width: 70px;
-    padding: 8px 10px;
+    width: 60px;
+    padding: 8px;
     background: var(--bg-secondary);
     border: 1px solid var(--border-color);
     border-radius: var(--radius-sm);
@@ -239,14 +242,35 @@ body {
     transition: all 0.2s ease;
 }
 
-.weight-input:focus {
+.reps-input {
+    width: 50px;
+    padding: 8px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    color: var(--text-primary);
+    font-size: 0.875rem;
+    text-align: center;
+    font-family: inherit;
+    transition: all 0.2s ease;
+}
+
+.input-divider {
+    color: var(--text-muted);
+    font-size: 0.75rem;
+}
+
+.weight-input:focus,
+.reps-input:focus {
     outline: none;
     border-color: var(--accent-blue);
     box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
-.weight-input::placeholder {
+.weight-input::placeholder,
+.reps-input::placeholder {
     color: var(--text-muted);
+    font-size: 0.75rem;
 }
 
 /* Actions */
@@ -401,10 +425,21 @@ body {
 }
 
 /* Category Colors */
-.section[data-category="legs"] .section-title { color: var(--accent-orange); }
-.section[data-category="upper"] .section-title { color: var(--accent-blue); }
-.section[data-category="core"] .section-title { color: var(--accent-purple); }
-.section[data-category="stretch"] .section-title { color: var(--accent-pink); }
+.section[data-category="legs"] .section-title {
+    color: var(--accent-orange);
+}
+
+.section[data-category="upper"] .section-title {
+    color: var(--accent-blue);
+}
+
+.section[data-category="core"] .section-title {
+    color: var(--accent-purple);
+}
+
+.section[data-category="stretch"] .section-title {
+    color: var(--accent-pink);
+}
 
 /* Toast Notification */
 .toast {
