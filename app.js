@@ -124,19 +124,17 @@ function renderExercises() {
                         ${lastText ? `<span class="exercise-previous">${lastText}</span>` : ''}
                     </div>
                 </div>
-                ${exercise.hasWeight ? `
-                    <div class="input-group">
-                        <input type="text" class="weight-input" 
-                            data-id="${exercise.id}" 
-                            placeholder="${lastData?.weight || 'lbs'}"
-                            value="${workoutState[exercise.id]?.weight || ''}">
-                        <span class="input-divider">x</span>
-                        <input type="text" class="reps-input" 
-                            data-id="${exercise.id}" 
-                            placeholder="${lastData?.reps || 'reps'}"
-                            value="${workoutState[exercise.id]?.reps || ''}">
-                    </div>
-                ` : ''}
+                <div class="input-group">
+                    <input type="text" class="weight-input" 
+                        data-id="${exercise.id}" 
+                        placeholder="${lastData?.weight || 'lbs'}"
+                        value="${workoutState[exercise.id]?.weight || ''}">
+                    <span class="input-divider">x</span>
+                    <input type="text" class="reps-input" 
+                        data-id="${exercise.id}" 
+                        placeholder="${lastData?.reps || 'reps'}"
+                        value="${workoutState[exercise.id]?.reps || ''}">
+                </div>
             `;
 
             section.appendChild(exerciseEl);
