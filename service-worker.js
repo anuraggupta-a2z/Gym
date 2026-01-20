@@ -1,4 +1,4 @@
-const CACHE_NAME = 'blueprint-strength-v5';
+const CACHE_NAME = 'blueprint-strength-v6';
 const ASSETS = [
     './',
     './index.html',
