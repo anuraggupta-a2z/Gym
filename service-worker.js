@@ -1,11 +1,11 @@
-const CACHE_NAME = 'blueprint-strength-v1';
+const CACHE_NAME = 'blueprint-strength-v2';
 const ASSETS = [
-    '/',
-    '/index.html',
-    '/styles.css',
-    '/app.js',
-    '/manifest.json',
-    '/icon.svg'
+    './',
+    './index.html',
+    './styles.css',
+    './app.js',
+    './manifest.json',
+    './icon.svg'
 ];
 
 // Install event - cache assets
