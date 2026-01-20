@@ -266,17 +266,6 @@ function renderCardio(container) {
                 </div>
             `).join('')}
 
-            <div class="cardio-inputs">
-                <h3>Session Data</h3>
-                <div class="cardio-input-row">
-                    <label>Zone 2 Minutes</label>
-                    <input type="number" id="zone2Input" value="${cardioState.zone2Minutes}">
-                </div>
-                <div class="cardio-input-row">
-                    <label>Vigorous Minutes</label>
-                    <input type="number" id="vigorousInput" value="${cardioState.vigorousMinutes}">
-                </div>
-            </div>
         </div>
     `;
 }
@@ -341,14 +330,7 @@ function setupEventListeners() {
         });
     });
 
-    // Cardio Inputs
-    document.getElementById('workoutSections').addEventListener('input', (e) => {
-        if (e.target.id === 'zone2Input') {
-            cardioState.zone2Minutes = parseInt(e.target.value) || 0;
-        } else if (e.target.id === 'vigorousInput') {
-            cardioState.vigorousMinutes = parseInt(e.target.value) || 0;
-        }
-    });
+
 
     // Input changes
     document.getElementById('workoutSections').addEventListener('input', (e) => {
