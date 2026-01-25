@@ -456,6 +456,24 @@ function setupEventListeners() {
     document.getElementById('historyModal').addEventListener('click', (e) => {
         if (e.target.id === 'historyModal') hideHistory();
     });
+
+    // Settings modal
+    document.getElementById('openSettings').addEventListener('click', () => {
+        document.getElementById('settingsModal').classList.add('active');
+    });
+    document.getElementById('closeSettings').addEventListener('click', () => {
+        document.getElementById('settingsModal').classList.remove('active');
+    });
+    document.getElementById('settingsModal').addEventListener('click', (e) => {
+        if (e.target.id === 'settingsModal') document.getElementById('settingsModal').classList.remove('active');
+    });
+
+    // Data Actions
+    document.getElementById('exportData').addEventListener('click', exportData);
+    document.getElementById('importBtn').addEventListener('click', () => {
+        document.getElementById('importFile').click();
+    });
+    document.getElementById('importFile').addEventListener('change', importData);
 }
 
 function saveStrength() {
@@ -604,6 +622,73 @@ function showHistory() {
 
 function hideHistory() {
     document.getElementById('historyModal').classList.remove('active');
+}
+
+function exportData() {
+    const data = {
+        history: history,
+        weeklyStats: weeklyStats,
+        exercises: exercises,
+        cardioChecklist: cardioChecklist, // in case names were changed
+        exportDate: new Date().toISOString()
+    };
+
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `blueprint-gym-backup-${new Date().toISOString().split('T')[0]}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    showToast('Data exported successfully! 💾');
+}
+
+function importData(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+        try {
+            const data = JSON.parse(event.target.result);
+
+            // Validate basic structure
+            if (!data.history || !data.weeklyStats) {
+                throw new Error('Invalid backup file format');
+            }
+
+            // Restore data
+            localStorage.setItem('blueprint-history', JSON.stringify(data.history));
+            localStorage.setItem('blueprint-weekly', JSON.stringify(data.weeklyStats));
+
+            // Restore custom names if present
+            const customData = {
+                strength: data.exercises,
+                cardio: data.cardioChecklist
+            };
+            // Map exercises only to save names/structure, not full object if not needed, 
+            // but for simplicity let's save what we had or rebuild the 'blueprint-exercises' format
+            // actually we load custom names from 'blueprint-exercises'.
+
+            // To be consistent with loadState, let's reconstruct blueprint-exercises
+            const exercisesToSave = {
+                strength: data.exercises.map(e => ({ id: e.id, name: e.name, sets: e.sets })),
+                cardio: data.cardioChecklist.map(c => ({ id: c.id, name: c.name }))
+            };
+            localStorage.setItem('blueprint-exercises', JSON.stringify(exercisesToSave));
+
+            alert('Data restored successfully! App will reload.');
+            location.reload();
+
+        } catch (err) {
+            console.error(err);
+            alert('Error importing data: ' + err.message);
+        }
+    };
+    reader.readAsText(file);
+    e.target.value = ''; // reset input
 }
 
 function showToast(message) {

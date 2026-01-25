@@ -68,8 +68,11 @@
                 Save Workout
             </button>
             <button class="btn btn-secondary" id="viewHistory">
-                <span class="btn-icon">📊</span>
                 History
+            </button>
+            <button class="btn btn-secondary" id="openSettings">
+                <span class="btn-icon">⚙️</span>
+                Settings
             </button>
         </div>
 
@@ -85,6 +88,32 @@
                 </div>
             </div>
         </div>
+    </div>
+
+    <!-- Settings Modal -->
+    <div class="modal" id="settingsModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Data Settings</h2>
+                <button class="modal-close" id="closeSettings">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="settings-group">
+                    <h3>Backup & Restore</h3>
+                    <p class="settings-desc">Save your data to a file or restore from a backup.</p>
+                    <div class="settings-actions">
+                        <button class="btn btn-primary" id="exportData">
+                            <span class="btn-icon">⬇️</span> Export Data
+                        </button>
+                        <button class="btn btn-secondary" id="importBtn">
+                            <span class="btn-icon">⬆️</span> Import Data
+                        </button>
+                        <input type="file" id="importFile" accept=".json" style="display: none">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
     </div>
 
     <script src="app.js?v=7"></script>

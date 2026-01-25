@@ -663,3 +663,29 @@ body[data-mode="rest"] .strength-progress {
     font-weight: 400;
     margin-left: 4px;
 }
+
+/* Settings */
+.settings-group {
+    background: var(--bg-card);
+    padding: 16px;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-color);
+}
+
+.settings-group h3 {
+    font-size: 1rem;
+    margin-bottom: 8px;
+    color: var(--text-primary);
+}
+
+.settings-desc {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    margin-bottom: 16px;
+    line-height: 1.4;
+}
+
+.settings-actions {
+    display: flex;
+    gap: 12px;
+}
