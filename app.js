@@ -385,6 +385,12 @@ function updateProgress() {
 
     document.getElementById('progressFill').style.width = `${percentage}%`;
     document.getElementById('progressText').textContent = `${completed} / ${total} exercises`;
+
+    // Trigger Confetti if 100% complete
+    if (completed === total && total > 0) {
+        showToast('Workout Complete! 🎉');
+        if (typeof Confetti !== 'undefined') Confetti.launch();
+    }
 }
 
 function updateDate() {
@@ -597,6 +603,7 @@ function saveCardio() {
     renderApp('cardio');
     saveProgress();
     showToast('Cardio session saved! 🏃');
+    if (typeof Confetti !== 'undefined') Confetti.launch();
 }
 
 function showHistory() {
