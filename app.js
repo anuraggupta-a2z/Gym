@@ -93,7 +93,8 @@ function loadState() {
         workoutState[ex.id] = {
             completed: false,
             weight: '',
-            reps: ''
+            reps: '',
+            alternate: null
         };
     });
 
@@ -263,6 +264,10 @@ function renderStrength(container) {
                 lastText = `Last: ${lastData.weight}${lastData.reps ? ` x ${lastData.reps}` : ''}`;
             }
 
+            const state = workoutState[exercise.id];
+            const isAlt = !!state.alternate;
+            const displayName = isAlt ? state.alternate : exercise.name;
+
             exerciseEl.innerHTML = `
                 <label class="checkbox-wrapper">
                     <input type="checkbox" data-id="${exercise.id}">
@@ -272,7 +277,17 @@ function renderStrength(container) {
                     ${isEditMode
                     ? `<input type="text" class="edit-name-input" data-id="${exercise.id}" value="${exercise.name}" placeholder="Exercise Name">
                            <input type="text" class="edit-sets-input" data-id="${exercise.id}" value="${exercise.sets}" placeholder="Sets">`
-                    : `<div class="exercise-name">${exercise.name}</div>`
+                    : `
+                            <div class="exercise-header-row">
+                                <div class="exercise-name ${isAlt ? 'is-alt' : ''}">
+                                    ${displayName}
+                                    ${isAlt ? `<span class="original-name-sub">(Sub for: ${exercise.name})</span>` : ''}
+                                </div>
+                                <button class="swap-btn" data-id="${exercise.id}" title="${isAlt ? 'Revert to original' : 'Swap exercise'}">
+                                    ${isAlt ? '↺' : '⇄'}
+                                </button>
+                            </div>
+                          `
                 }
                     <div class="exercise-meta">
                         <span class="exercise-sets">${exercise.sets}</span>
@@ -407,6 +422,31 @@ function setupEventListeners() {
         saveProgress();
     });
 
+    // Swap button clicks
+    document.getElementById('workoutSections').addEventListener('click', (e) => {
+        if (e.target.classList.contains('swap-btn')) {
+            const id = e.target.dataset.id;
+            const state = workoutState[id];
+
+            if (state.alternate) {
+                // Revert
+                if (confirm(`Revert back to ${exercises.find(ex => ex.id === id).name}?`)) {
+                    state.alternate = null;
+                    renderApp('strength');
+                    saveProgress();
+                }
+            } else {
+                // Swap
+                const newName = prompt('Enter alternate exercise name:');
+                if (newName && newName.trim()) {
+                    state.alternate = newName.trim();
+                    renderApp('strength');
+                    saveProgress();
+                }
+            }
+        }
+    });
+
     // Save btn logic handled in renderApp
 
 
@@ -428,6 +468,7 @@ function saveStrength() {
 
     const weights = {};
     const reps = {};
+    const alternates = {};
 
     exercises.forEach(ex => {
         if (workoutState[ex.id].weight) {
@@ -436,6 +477,9 @@ function saveStrength() {
         if (workoutState[ex.id].reps) {
             reps[ex.id] = workoutState[ex.id].reps;
         }
+        if (workoutState[ex.id].alternate) {
+            alternates[ex.id] = workoutState[ex.id].alternate;
+        }
     });
 
     const session = {
@@ -443,7 +487,8 @@ function saveStrength() {
         date: new Date().toISOString(),
         completed: completedExercises.map(ex => ex.id),
         weights: weights,
-        reps: reps
+        reps: reps,
+        alternates: alternates
     };
 
     history.push(session);
@@ -451,7 +496,7 @@ function saveStrength() {
 
     // Reset state
     exercises.forEach(ex => {
-        workoutState[ex.id] = { completed: false, weight: '', reps: '' };
+        workoutState[ex.id] = { completed: false, weight: '', reps: '', alternate: null };
     });
 
     renderApp('strength');
@@ -526,7 +571,10 @@ function showHistory() {
                     const ex = exercises.find(e => e.id === id);
                     if (!ex) return null;
                     const repsVal = session.reps ? session.reps[id] : null;
-                    return `${ex.name}: ${weight}${repsVal ? ` x ${repsVal}` : ''}`;
+                    const altName = session.alternates ? session.alternates[id] : null;
+
+                    const nameDisplay = altName ? `${altName} (sub)` : ex.name;
+                    return `${nameDisplay}: ${weight}${repsVal ? ` x ${repsVal}` : ''}`;
                 })
                 .filter(Boolean);
 
