@@ -768,3 +768,96 @@ body[data-mode="rest"] .strength-progress {
     transform: translate(-50%, -100%);
     margin-top: -10px;
 }
+
+/* Rest Timer */
+.rest-timer {
+    position: fixed;
+    bottom: 70px;
+    /* Above tabs */
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    padding: 12px 20px;
+    border-radius: 50px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+    z-index: 900;
+    width: 90%;
+    max-width: 400px;
+    justify-content: space-between;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.rest-timer.hidden {
+    transform: translate(-50%, 150%);
+    opacity: 0;
+    pointer-events: none;
+}
+
+.timer-content {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+}
+
+.timer-label {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    font-weight: 600;
+}
+
+.timer-display {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: white;
+    font-variant-numeric: tabular-nums;
+}
+
+.timer-controls {
+    display: flex;
+    gap: 8px;
+}
+
+.timer-btn {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    color: white;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.timer-btn:active {
+    transform: scale(0.95);
+}
+
+.timer-btn.skip {
+    background: transparent;
+    border-color: transparent;
+    color: var(--text-muted);
+}
+
+.timer-finished {
+    animation: timerPulse 1s infinite;
+    border-color: var(--accent-blue);
+}
+
+@keyframes timerPulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.4);
+    }
+
+    70% {
+        box-shadow: 0 0 0 15px rgba(59, 130, 246, 0);
+    }
+
+    100% {
+        box-shadow: 0 0 0 0 rgba(59, 130, 246, 0);
+    }
+}
