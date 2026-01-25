@@ -286,6 +286,9 @@ function renderStrength(container) {
                                 <button class="swap-btn" data-id="${exercise.id}" title="${isAlt ? 'Revert to original' : 'Swap exercise'}">
                                     ${isAlt ? '↺' : '⇄'}
                                 </button>
+                                <button class="chart-btn" data-id="${exercise.id}" title="View Progress">
+                                    📈
+                                </button>
                             </div>
                           `
                 }
@@ -474,6 +477,23 @@ function setupEventListeners() {
         document.getElementById('importFile').click();
     });
     document.getElementById('importFile').addEventListener('change', importData);
+
+    // Chart Modal
+    document.getElementById('closeChart').addEventListener('click', () => {
+        document.getElementById('chartModal').classList.remove('active');
+    });
+    document.getElementById('chartModal').addEventListener('click', (e) => {
+        if (e.target.id === 'chartModal') document.getElementById('chartModal').classList.remove('active');
+    });
+
+    // Delegated listener for chart buttons
+    document.getElementById('workoutSections').addEventListener('click', (e) => {
+        const btn = e.target.closest('.chart-btn');
+        if (btn) {
+            const id = btn.dataset.id;
+            showChart(id);
+        }
+    });
 }
 
 function saveStrength() {
@@ -618,6 +638,93 @@ function showHistory() {
     }
 
     modal.classList.add('active');
+}
+
+function showChart(exerciseId) {
+    const ex = exercises.find(e => e.id === exerciseId);
+    if (!ex) return;
+
+    document.getElementById('chartTitle').textContent = `${ex.name} Progress`;
+    const container = document.getElementById('chartContainer');
+    container.innerHTML = '';
+
+    const data = getExerciseHistory(exerciseId);
+    if (data.length < 2) {
+        container.innerHTML = '<div class="chart-empty">Need at least 2 workouts with weight data to show progress.</div>';
+    } else {
+        container.innerHTML = renderChartSVG(data);
+    }
+
+    document.getElementById('chartModal').classList.add('active');
+}
+
+function getExerciseHistory(id) {
+    // Filter history for sessions where this exercise was completed AND has weight
+    return history
+        .filter(h => h.weights && h.weights[id])
+        .map(h => ({
+            date: new Date(h.date),
+            weight: parseFloat(h.weights[id]) || 0
+        }))
+        .sort((a, b) => a.date - b.date);
+}
+
+function renderChartSVG(data) {
+    const width = containerWidth();
+    const height = 250;
+    const padding = 30;
+
+    // Scales
+    const minWeight = Math.min(...data.map(d => d.weight)) * 0.9;
+    const maxWeight = Math.max(...data.map(d => d.weight)) * 1.1;
+    const minDate = data[0].date.getTime();
+    const maxDate = data[data.length - 1].date.getTime();
+
+    const getX = (date) => {
+        const percent = (date.getTime() - minDate) / (maxDate - minDate || 1);
+        return padding + percent * (width - padding * 2);
+    };
+
+    const getY = (weight) => {
+        const percent = (weight - minWeight) / (maxWeight - minWeight || 1);
+        return height - padding - percent * (height - padding * 2);
+    };
+
+    // Generate path
+    const points = data.map(d => `${getX(d.date)},${getY(d.weight)}`).join(' ');
+
+    // Generate dots
+    const dots = data.map(d => `
+        <circle cx="${getX(d.date)}" cy="${getY(d.weight)}" r="4" class="chart-dot">
+            <title>${d.weight} lbs - ${d.date.toLocaleDateString()}</title>
+        </circle>
+    `).join('');
+
+    // Axes
+    const xAxisY = height - padding;
+    const yAxisX = padding;
+
+    return `
+        <svg class="chart-svg" viewBox="0 0 ${width} ${height}">
+            <!-- Line -->
+            <polyline points="${points}" class="chart-line" />
+            
+            <!-- Dots -->
+            ${dots}
+            
+            <!-- Axes/Labels (Simple) -->
+            <text x="${padding}" y="${padding - 10}" class="chart-text">${Math.round(maxWeight)}</text>
+            <text x="${padding}" y="${height - padding}" class="chart-text">${Math.round(minWeight)}</text>
+            <text x="${padding}" y="${height - 5}" class="chart-text">${data[0].date.toLocaleDateString(undefined, { month: 'numeric', day: 'numeric' })}</text>
+            <text x="${width - padding}" y="${height - 5}" class="chart-text" text-anchor="end">${data[data.length - 1].date.toLocaleDateString(undefined, { month: 'numeric', day: 'numeric' })}</text>
+        </svg>
+    `;
+}
+
+function containerWidth() {
+    // Estimate width based on modal size
+    const modal = document.querySelector('.modal-content');
+    return modal ? modal.clientWidth - 40 : 300;
 }
 
 function hideHistory() {

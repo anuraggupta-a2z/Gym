@@ -110,6 +110,20 @@
                         </button>
                         <input type="file" id="importFile" accept=".json" style="display: none">
                     </div>
+                    <!-- Chart Modal -->
+                    <div class="modal" id="chartModal">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h2 id="chartTitle">Progress</h2>
+                                <button class="modal-close" id="closeChart">&times;</button>
+                            </div>
+                            <div class="modal-body">
+                                <div class="chart-container" id="chartContainer">
+                                    <!-- SVG Chart will be injected here -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
