@@ -1,5 +1,5 @@
 // Exercise data with categories
-const exercises = [
+let exercises = [
     // Legs
     { id: 'sled-pull', name: 'Backward Sled Pull', sets: '5 min', category: 'legs', hasWeight: false },
     { id: 'dead-hang', name: 'Dead Hang', sets: '60s', category: 'legs', hasWeight: false },
@@ -48,7 +48,7 @@ let weeklyStats = {
 };
 
 // Cardio Protocol
-const cardioChecklist = [
+let cardioChecklist = [
     { id: 'cardio-warmup', name: 'Warmup (10 min)', type: 'warmup' },
     { id: 'cardio-int-1', name: 'Interval 1 (4m Hard / 4m Easy)', type: 'interval' },
     { id: 'cardio-int-2', name: 'Interval 2 (4m Hard / 4m Easy)', type: 'interval' },
@@ -61,6 +61,8 @@ let cardioState = {
     zone2Minutes: 37,
     vigorousMinutes: 12
 };
+
+let isEditMode = false;
 
 
 // Initialize app
@@ -99,6 +101,44 @@ function loadState() {
     cardioChecklist.forEach(item => {
         cardioState.completed[item.id] = false;
     });
+
+    // Load custom exercise names
+    const savedExercises = localStorage.getItem('blueprint-exercises');
+    if (savedExercises) {
+        const customData = JSON.parse(savedExercises);
+        if (customData.strength) {
+            // Merge names into existing exercises to preserve structure/order if we update code later
+            // Or just replace if strict. Let's map over IDs to be safe.
+            exercises = exercises.map(ex => {
+                const custom = customData.strength.find(c => c.id === ex.id);
+                return custom ? { ...ex, name: custom.name, sets: custom.sets } : ex;
+            });
+        }
+        if (customData.cardio) {
+            cardioChecklist = cardioChecklist.map(item => {
+                const custom = customData.cardio.find(c => c.id === item.id);
+                return custom ? { ...item, name: custom.name } : item;
+            });
+        }
+    }
+
+    // Load partial progress (auto-saved)
+    const savedProgress = localStorage.getItem('blueprint-progress');
+    if (savedProgress) {
+        try {
+            const progress = JSON.parse(savedProgress);
+            const today = new Date().toDateString();
+
+            // Only restore if it's from today
+            if (progress.date === today) {
+                if (progress.workoutState) workoutState = progress.workoutState;
+                if (progress.cardioState) cardioState = progress.cardioState;
+                console.log('Restored daily progress');
+            }
+        } catch (e) {
+            console.error('Error loading progress', e);
+        }
+    }
 }
 
 function checkWeeklyReset() {
@@ -175,6 +215,21 @@ function renderApp(mode = null) {
         document.getElementById('saveWorkout').style.display = 'none';
     }
 
+    // Add Edit Toggle to header if not present
+    if (!document.getElementById('editToggle')) {
+        const header = document.querySelector('.dashboard');
+        const toggle = document.createElement('button');
+        toggle.id = 'editToggle';
+        toggle.className = 'edit-toggle';
+        toggle.innerHTML = '✏️ Clean';
+        toggle.onclick = toggleEditMode;
+        // Insert before tabs
+        const tabs = document.querySelector('.tabs');
+        header.insertBefore(toggle, tabs);
+    }
+
+    updateEditToggle();
+
     updateDashboard();
 }
 
@@ -214,7 +269,11 @@ function renderStrength(container) {
                     <span class="checkbox-custom"></span>
                 </label>
                 <div class="exercise-info">
-                    <div class="exercise-name">${exercise.name}</div>
+                    ${isEditMode
+                    ? `<input type="text" class="edit-name-input" data-id="${exercise.id}" value="${exercise.name}" placeholder="Exercise Name">
+                           <input type="text" class="edit-sets-input" data-id="${exercise.id}" value="${exercise.sets}" placeholder="Sets">`
+                    : `<div class="exercise-name">${exercise.name}</div>`
+                }
                     <div class="exercise-meta">
                         <span class="exercise-sets">${exercise.sets}</span>
                         ${lastText ? `<span class="exercise-previous">${lastText}</span>` : ''}
@@ -261,7 +320,10 @@ function renderCardio(container) {
                         <span class="checkbox-custom"></span>
                     </label>
                     <div class="exercise-info">
-                        <div class="exercise-name">${item.name}</div>
+                        ${isEditMode
+            ? `<input type="text" class="edit-name-input" data-type="cardio" data-id="${item.id}" value="${item.name}">`
+            : `<div class="exercise-name">${item.name}</div>`
+        }
                     </div>
                 </div>
             `).join('')}
@@ -320,6 +382,7 @@ function setupEventListeners() {
                 updateProgress();
             }
             e.target.closest('.exercise').classList.toggle('completed', e.target.checked);
+            saveProgress();
         }
     });
 
@@ -341,6 +404,7 @@ function setupEventListeners() {
             const id = e.target.dataset.id;
             workoutState[id].reps = e.target.value;
         }
+        saveProgress();
     });
 
     // Save btn logic handled in renderApp
@@ -391,6 +455,7 @@ function saveStrength() {
     });
 
     renderApp('strength');
+    saveProgress();
     showToast('Strength workout saved! 💪');
 }
 
@@ -431,6 +496,7 @@ function saveCardio() {
     });
 
     renderApp('cardio');
+    saveProgress();
     showToast('Cardio session saved! 🏃');
 }
 
@@ -514,4 +580,64 @@ function registerServiceWorker() {
             .then(reg => console.log('Service Worker registered'))
             .catch(err => console.log('Service Worker registration failed:', err));
     }
+}
+
+function saveProgress() {
+    const data = {
+        date: new Date().toDateString(),
+        workoutState: workoutState,
+        cardioState: cardioState
+    };
+    localStorage.setItem('blueprint-progress', JSON.stringify(data));
+}
+
+function toggleEditMode() {
+    isEditMode = !isEditMode;
+    const mode = document.body.dataset.mode;
+    renderApp(mode);
+}
+
+function updateEditToggle() {
+    const btn = document.getElementById('editToggle');
+    if (btn) {
+        btn.innerHTML = isEditMode ? '✅ Done' : '✏️ Edit';
+        btn.classList.toggle('active', isEditMode);
+    }
+}
+
+// Add event listener for edit inputs
+document.addEventListener('change', (e) => {
+    if (e.target.classList.contains('edit-name-input') || e.target.classList.contains('edit-sets-input')) {
+        saveCustomizations();
+    }
+});
+
+function saveCustomizations() {
+    // Update models from inputs
+    document.querySelectorAll('.edit-name-input').forEach(input => {
+        const id = input.dataset.id;
+        const val = input.value;
+
+        if (input.dataset.type === 'cardio') {
+            const item = cardioChecklist.find(c => c.id === id);
+            if (item) item.name = val;
+        } else {
+            const ex = exercises.find(e => e.id === id);
+            if (ex) ex.name = val;
+        }
+    });
+
+    document.querySelectorAll('.edit-sets-input').forEach(input => {
+        const id = input.dataset.id;
+        const val = input.value;
+        const ex = exercises.find(e => e.id === id);
+        if (ex) ex.sets = val;
+    });
+
+    // Persist
+    const data = {
+        strength: exercises.map(e => ({ id: e.id, name: e.name, sets: e.sets })),
+        cardio: cardioChecklist.map(c => ({ id: c.id, name: c.name }))
+    };
+    localStorage.setItem('blueprint-exercises', JSON.stringify(data));
 }
