@@ -407,7 +407,6 @@ function setupEventListeners() {
                 updateProgress();
             }
             e.target.closest('.exercise').classList.toggle('completed', e.target.checked);
-            e.target.closest('.exercise').classList.toggle('completed', e.target.checked);
             saveProgress();
         }
     });
