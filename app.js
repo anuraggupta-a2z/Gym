@@ -536,6 +536,9 @@ function saveStrength() {
         alternates: alternates
     };
 
+    // Check for PRs before saving
+    const newPRs = checkPRs(session);
+
     history.push(session);
     localStorage.setItem('blueprint-history', JSON.stringify(history));
 
@@ -546,7 +549,47 @@ function saveStrength() {
 
     renderApp('strength');
     saveProgress();
-    showToast('Strength workout saved! 💪');
+
+    if (newPRs.length > 0) {
+        // Show extended toast for PRs
+        const prNames = newPRs.map(p => p.name).join(', ');
+        showToast(`🏆 New PRs: ${prNames}!`);
+        if (typeof Confetti !== 'undefined') Confetti.launch();
+    } else {
+        showToast('Strength workout saved! 💪');
+    }
+}
+
+function checkPRs(currentSession) {
+    const prs = [];
+
+    currentSession.completed.forEach(id => {
+        const currentWeight = parseFloat(currentSession.weights[id]);
+        if (!currentWeight) return;
+
+        // Find max weight in previous history for this exercise
+        let maxWeight = 0;
+        history.forEach(h => {
+            if (h.weights && h.weights[id]) {
+                const w = parseFloat(h.weights[id]);
+                if (w > maxWeight) maxWeight = w;
+            }
+        });
+
+        if (currentWeight > maxWeight && maxWeight > 0) {
+            const ex = exercises.find(e => e.id === id);
+            if (ex) {
+                prs.push({
+                    id: id,
+                    name: ex.name,
+                    weight: currentWeight,
+                    oldMax: maxWeight
+                });
+            }
+        }
+    });
+
+    return prs;
 }
 
 function saveCardio() {
