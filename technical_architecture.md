@@ -14,7 +14,7 @@ We built this as a **Progressive Web App (PWA)**.
 ### System Overview
 ```mermaid
 graph TD
-    User(("User 🏋️‍♂️"))
+    User(("User"))
     subgraph "iOS Device (Client)"
         Browser["Safari / PWA Shell"]
         UI["User Interface"]
