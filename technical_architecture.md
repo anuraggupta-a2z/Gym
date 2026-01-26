@@ -21,6 +21,7 @@ graph TD
         Logic[app.js Logic]
         Cache[Service Worker Cache]
         DB[(localStorage)]
+        FS[File System]
     end
     subgraph "The Cloud"
         GH[GitHub Pages]
@@ -30,6 +31,8 @@ graph TD
     UI <--> Logic
     Logic <-->|Read/Write| DB
     Logic <-->|Fetch Code| Cache
+    Logic -->|Export JSON| FS
+    Logic <--|Import JSON| FS
     Cache <-->|Updates| GH
     
     style DB fill:#f9f,stroke:#333,stroke-width:2px
@@ -37,85 +40,53 @@ graph TD
 ```
 
 **How components connect:**
-1.  **`index.html`**: The skeleton. It loads the muscle (`app.js`) and the skin (`styles.css`).
-2.  **`app.js`**: The brain. It manages the state (what you checked off), handles interactions (clicks, swipes), and talks to the persistent memory (`localStorage`).
+1.  **`index.html`**: The skeleton. It loads the muscle (`app.js`), the skin (`styles.css`), and the confetti party (`confetti.js`).
+2.  **`app.js`**: The brain. It manages state, handles interactions, calculates stats, and orchestrates the show.
 3.  **`service-worker.js`**: The gatekeeper. It intercepts network requests. If you're offline, it serves files from its cache so the app loads instantly.
 
 ## 🛠️ Technologies Used
 
 -   **Vanilla JavaScript**: No React, no Vue, no bloated frameworks.
-    -   *Why?* Speed and simplicity. For an app this size, a framework is like bringing a semi-truck to pick up groceries. Vanilla JS keeps the bundle size tiny (~18KB) and performance blazing fast.
+    -   *Why?* Speed and simplicity. Bundle size is tiny (~20KB) and performance is blazing fast.
 -   **CSS Variables**: For that sweet, consistent theming (Dark Mode vibes).
 -   **LocalStorage API**: Our "Database". It's a simple key-value store built into the browser.
 -   **Service Workers**: The magic behind "offline-capable".
+-   **SVG & Canvas**: Used for lightweight Charts and Confetti respectively, without heavy charting libraries.
 
 ## 🧠 Technical Decisions & "Why did we do that?"
 
 ### 1. "Database" in the Browser (`localStorage`)
-*   **The Decision**: We chose `localStorage` over a cloud database (like Firebase).
-*   **The Why**: Privacy and speed. Your workout data is *yours*. It lives on your phone. Plus, reading from local memory is instant. No loading spinners.
-*   **The Trade-off**: If you lose your phone, you lose your data. (We accepted this risk for simplicity).
+*   **The Decision**: We chose `localStorage` over a cloud database.
+*   **The Why**: Privacy and speed. Data lives on your device.
+*   **The Trade-off**: If you lose your phone, you lose your data.
+*   **The Fix**: We added **JSON Export/Import**. Users can now create physical backups of their hard work.
 
-### 2. State Management: The "Truth" Arrays
-*   **The Decision**: We used global variables (`completed`, `weights`, `history`) as the "Single Source of Truth" and re-rendered the UI whenever they changed.
-*   **The Why**: This mimics React's philosophy ("UI is a function of State") without the library overhead.
-    *   *Example*: When you swap an exercise, we update the `workoutState` object first. Then we call `renderApp()`. The UI automatically reflects the change. We never try to manually hack the DOM (like `element.innerText = '...'`) without updating state first.
+### 2. Zero-Dependency Analytics (SVG Charts)
+*   **The Challenge**: We wanted progress charts, but Chart.js/Recharts are huge (100KB+).
+*   **The Solution**: We wrote a custom `renderChartSVG()` function.
+*   **How it works**: It takes a history array, calculates min/max coordinates, and generates a raw HTML string of `<svg>`, `<polyline>`, and `<circle>` tags.
+*   **Result**: Beautiful graphs with < 1KB of code overhead.
 
-### Data Flow Loop
-```mermaid
-sequenceDiagram
-    participant U as User
-    participant DOM as DOM/UI
-    participant S as State (Memory)
-    participant LS as localStorage (Disk)
+### 3. Delighting the User (Confetti)
+*   **The Feature**: A celebration when the workout is 100% complete.
+*   **The Implementation**: A standalone `confetti.js` module. It creates a temporary `<canvas>` overlay, draws particles with `requestAnimationFrame`, and self-destructs after 3 seconds.
+*   **Key**: Independent module. If it crashes, the core app survives.
 
-    U->>DOM: Clicks Checkbox
-    DOM->>S: Update workoutState[id].completed = true
-    S->>LS: saveProgress() (Write JSON)
-    S-->>DOM: renderApp() (Update Classes)
-    
-    Note over S, LS: This happens INSTANTLY.<br/>No network request needed.
-```
-
-### 3. The "Mutable" Exercise List
-*   **The Decision**: We moved from `const exercises = [...]` to `let exercises = [...]`.
-*   **The Lesson**: Originally, we hardcoded exercises. But then you wanted to rename them. **Hardcoding is a trap.** By making the list dynamic and mergeable with saved data, we empowered the user without rewriting the code every time.
+### 4. Cache Strategy (Versioning)
+*   **The Problem**: Browsers love to hold onto old files.
+*   **The Fix**: We manually version the cache in `service-worker.js` (e.g., `CACHE_NAME = 'blueprint-strength-v15'`). Changing this string forces the browser to discard the old fortress and rebuild it with new files.
 
 ## 🐛 War Stories: Bugs & Lessons Learned
 
 ### The "Ghost Data" Crash (The iOS Issue) 👻
-*   **The Bug**: You'd do a workout, switch apps, come back, and... *poof*. Data gone.
-*   **The Cause**: iOS is aggressive. If an app is in the background, iOS might kill it to save battery. Since we only saved data when you clicked "Save Workout", anything in progress was held in RAM (volatile memory). When iOS killed the app, RAM was cleared.
-*   **The Fix**: **Auto-save on every change.** Now, every time you check a box or type a weight, `saveProgress()` writes to `localStorage`.
-*   **The Lesson**: **Never trust the user to save.** The best interface is one that saves you from yourself. Treat memory (RAM) as temporary and hostile.
+*   **The Bug**: App backgrounding caused data loss in RAM.
+*   **The Fix**: **Auto-save on every change.** Every checkmark triggers a write to disk.
 
 ### The "Zombie Update" 🧟‍♂️
-*   **The Bug**: We pushed code to GitHub, but your phone kept showing the old version.
-*   **The Cause**: The Service Worker! It's designed to cache files for offline use. It was doing its job *too well*, serving the old cached `app.js` instead of fetching the new one.
-*   **The Fix**: Versioning. We changed `CACHE_NAME` from `v7` to `v8`. This forced the browser to dump the old cache and grab the fresh code.
-*   **The Lesson**: **Cache invalidation is one of the two hardest problems in computer science.** (The other is naming things). Always have a strategy to bust your cache.
+*   **The Bug**: New features (like the Rest Timer) wouldn't show up because the old `app.js` was cached.
+*   **The Fix**: Aggressive version bumping in both `service-worker.js` AND the `script src` tag in HTML (`app.js?v=12`).
 
-### The "Deployment Limbo" ☁️
-*   **The Bug**: We pushed to `main`, but nothing happened.
-*   **The Cause**: GitHub Pages was listening to the `gh-pages` branch, not `main`. We were shouting into the void.
-*   **The Lesson**: **Know your pipeline.** It's not enough to write code; you must know how it ships. We documented this in `DEPLOYMENT.md` so we never forget again.
-
-### Deployment Pipeline
-```mermaid
-gitGraph
-    commit id: "Initial"
-    branch gh-pages
-    checkout main
-    commit id: "Dev Work"
-    commit id: "Bug Fix"
-    checkout gh-pages
-    merge main tag: "Deploy"
-    checkout main
-    commit id: "New Feature"
-```
-*Visualizing the flow: Work happens on `main`. Deploys happen only when we merge/push to `gh-pages`.*
-
-## 🚀 How Good Engineers Think
-1.  **Fail Safely**: We didn't just fix the crash; we assumed crashes *will* happen and made sure data survives them.
-2.  **User First**: The "Swap" feature wasn't in the original spec. But we realized rigid plans break in the real world (sometimes the Squat Rack is taken!). Good software adapts to the user, not the other way around.
-3.  **Simplicity Wins**: We could have used a heavy database or framework. We didn't. We solved the problem with the simplest tool available. That is the mark of engineering maturity.
+## 🚀 Engineering Principles
+1.  **Fail Safely**: Assume crashes happen. Persist data constantly.
+2.  **User First**: Rigid plans break. We added "Alternate Exercises" because sometimes the gym is busy.
+3.  **Simplicity Wins**: We removed the "Rest Timer" feature when it didn't align with the user's flow. Code deleted is code debugged.
