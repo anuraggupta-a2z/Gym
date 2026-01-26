@@ -62,12 +62,6 @@ let cardioState = {
     vigorousMinutes: 12
 };
 
-let timer = {
-    interval: null,
-    remaining: 0,
-    active: false,
-    duration: 90
-};
 
 let isEditMode = false;
 
@@ -413,12 +407,8 @@ function setupEventListeners() {
                 updateProgress();
             }
             e.target.closest('.exercise').classList.toggle('completed', e.target.checked);
+            e.target.closest('.exercise').classList.toggle('completed', e.target.checked);
             saveProgress();
-
-            // Start timer if checked and not cardio
-            if (e.target.checked && !isCardio) {
-                startTimer(90);
-            }
         }
     });
 
@@ -512,10 +502,6 @@ function setupEventListeners() {
             showChart(id);
         }
     });
-
-    // Timer Controls
-    document.getElementById('addTimeBtn').addEventListener('click', () => addTime(30));
-    document.getElementById('skipTimerBtn').addEventListener('click', cancelTimer);
 }
 
 function saveStrength() {
@@ -819,67 +805,6 @@ function importData(e) {
     };
     reader.readAsText(file);
     e.target.value = ''; // reset input
-}
-
-// Timer Logic
-function startTimer(seconds) {
-    if (timer.interval) clearInterval(timer.interval);
-
-    timer.remaining = seconds;
-    timer.active = true;
-
-    // Show UI
-    const el = document.getElementById('restTimer');
-    el.classList.remove('hidden');
-    el.classList.remove('timer-finished');
-
-    updateTimerDisplay();
-
-    timer.interval = setInterval(tick, 1000);
-}
-
-function tick() {
-    timer.remaining--;
-    updateTimerDisplay();
-
-    if (timer.remaining <= 0) {
-        finishTimer();
-    }
-}
-
-function updateTimerDisplay() {
-    const min = Math.floor(timer.remaining / 60);
-    const sec = timer.remaining % 60;
-    const display = `${min}:${sec.toString().padStart(2, '0')}`;
-    document.getElementById('timerDisplay').textContent = display;
-}
-
-function finishTimer() {
-    clearInterval(timer.interval);
-    timer.active = false;
-    document.getElementById('restTimer').classList.add('timer-finished');
-
-    // Feedback
-    if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
-    // Optional: Play sound if we add an audio file later
-}
-
-function addTime(seconds) {
-    timer.remaining += seconds;
-    updateTimerDisplay();
-    if (timer.remaining > 0) {
-        document.getElementById('restTimer').classList.remove('timer-finished');
-        if (!timer.active) {
-            timer.active = true;
-            timer.interval = setInterval(tick, 1000);
-        }
-    }
-}
-
-function cancelTimer() {
-    if (timer.interval) clearInterval(timer.interval);
-    timer.active = false;
-    document.getElementById('restTimer').classList.add('hidden');
 }
 
 function showToast(message) {
