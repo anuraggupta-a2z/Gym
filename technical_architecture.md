@@ -14,25 +14,25 @@ We built this as a **Progressive Web App (PWA)**.
 ### System Overview
 ```mermaid
 graph TD
-    User((User 🏋️‍♂️))
+    User(("User 🏋️‍♂️"))
     subgraph "iOS Device (Client)"
-        Browser[Safari / PWA Shell]
-        UI[User Interface]
-        Logic[app.js Logic]
-        Cache[Service Worker Cache]
-        DB[(localStorage)]
-        FS[File System]
+        Browser["Safari / PWA Shell"]
+        UI["User Interface"]
+        Logic["app.js Logic"]
+        Cache["Service Worker Cache"]
+        DB[("localStorage")]
+        FS["File System"]
     end
     subgraph "The Cloud"
-        GH[GitHub Pages]
+        GH["GitHub Pages"]
     end
 
     User <-->|Interacts| UI
     UI <--> Logic
-    Logic <-->|Read/Write| DB
-    Logic <-->|Fetch Code| Cache
-    Logic -->|Export JSON| FS
-    Logic <--|Import JSON| FS
+    Logic <-->|"Read/Write"| DB
+    Logic <-->|"Fetch Code"| Cache
+    Logic -->|"Export JSON"| FS
+    Logic <--|"Import JSON"| FS
     Cache <-->|Updates| GH
     
     style DB fill:#f9f,stroke:#333,stroke-width:2px
