@@ -180,20 +180,26 @@ function getLastData(exerciseId) {
     return null;
 }
 
+// For assisted exercises (pull-ups), lower weight = stronger (less assistance)
+const LOWER_IS_BETTER = ['pull-ups'];
+
 function getPR(exerciseId) {
-    let maxWeight = 0;
+    const lowerIsBetter = LOWER_IS_BETTER.includes(exerciseId);
+    let bestWeight = lowerIsBetter ? Infinity : 0;
     let bestReps = null;
+    let found = false;
     for (let i = 0; i < history.length; i++) {
         const session = history[i];
         if (session.weights && session.weights[exerciseId]) {
             const w = parseFloat(session.weights[exerciseId]);
-            if (w > maxWeight) {
-                maxWeight = w;
+            if (lowerIsBetter ? w < bestWeight : w > bestWeight) {
+                bestWeight = w;
                 bestReps = session.reps ? session.reps[exerciseId] : null;
+                found = true;
             }
         }
     }
-    return maxWeight > 0 ? { weight: maxWeight, reps: bestReps } : null;
+    return found ? { weight: bestWeight, reps: bestReps } : null;
 }
 
 const SCHEDULE = {
@@ -592,23 +598,31 @@ function checkPRs(currentSession) {
         const currentWeight = parseFloat(currentSession.weights[id]);
         if (!currentWeight) return;
 
-        // Find max weight in previous history for this exercise
-        let maxWeight = 0;
+        const lowerIsBetter = LOWER_IS_BETTER.includes(id);
+        let bestWeight = lowerIsBetter ? Infinity : 0;
+        let found = false;
         history.forEach(h => {
             if (h.weights && h.weights[id]) {
                 const w = parseFloat(h.weights[id]);
-                if (w > maxWeight) maxWeight = w;
+                if (lowerIsBetter ? w < bestWeight : w > bestWeight) {
+                    bestWeight = w;
+                    found = true;
+                }
             }
         });
 
-        if (currentWeight > maxWeight && maxWeight > 0) {
+        const isBetter = lowerIsBetter
+            ? currentWeight < bestWeight
+            : currentWeight > bestWeight;
+
+        if (isBetter && found) {
             const ex = exercises.find(e => e.id === id);
             if (ex) {
                 prs.push({
                     id: id,
                     name: ex.name,
                     weight: currentWeight,
-                    oldMax: maxWeight
+                    oldMax: bestWeight
                 });
             }
         }
