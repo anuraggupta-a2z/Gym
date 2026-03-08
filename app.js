@@ -180,6 +180,22 @@ function getLastData(exerciseId) {
     return null;
 }
 
+function getPR(exerciseId) {
+    let maxWeight = 0;
+    let bestReps = null;
+    for (let i = 0; i < history.length; i++) {
+        const session = history[i];
+        if (session.weights && session.weights[exerciseId]) {
+            const w = parseFloat(session.weights[exerciseId]);
+            if (w > maxWeight) {
+                maxWeight = w;
+                bestReps = session.reps ? session.reps[exerciseId] : null;
+            }
+        }
+    }
+    return maxWeight > 0 ? { weight: maxWeight, reps: bestReps } : null;
+}
+
 const SCHEDULE = {
     0: 'Rest', // Sunday
     1: 'Strength', // Monday
@@ -258,6 +274,7 @@ function renderStrength(container) {
 
         categoryExercises.forEach(exercise => {
             const lastData = getLastData(exercise.id);
+            const prData = getPR(exercise.id);
             const exerciseEl = document.createElement('div');
             exerciseEl.className = 'exercise';
             exerciseEl.dataset.id = exercise.id;
@@ -265,6 +282,11 @@ function renderStrength(container) {
             let lastText = '';
             if (lastData) {
                 lastText = `Last: ${lastData.weight}${lastData.reps ? ` x ${lastData.reps}` : ''}`;
+            }
+
+            let prText = '';
+            if (prData) {
+                prText = `PR: ${prData.weight}${prData.reps ? ` x ${prData.reps}` : ''}`;
             }
 
             const state = workoutState[exercise.id];
@@ -298,6 +320,7 @@ function renderStrength(container) {
                     <div class="exercise-meta">
                         <span class="exercise-sets">${exercise.sets}</span>
                         ${lastText ? `<span class="exercise-previous">${lastText}</span>` : ''}
+                        ${prText ? `<span class="exercise-pr">${prText}</span>` : ''}
                     </div>
                 </div>
                 <div class="input-group">

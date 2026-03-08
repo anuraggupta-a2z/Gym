@@ -220,6 +220,11 @@ body {
     color: var(--accent-green);
 }
 
+.exercise-pr {
+    color: var(--accent-orange);
+    font-weight: 500;
+}
+
 /* Inputs */
 .input-group {
     display: flex;
