@@ -185,21 +185,21 @@ const LOWER_IS_BETTER = ['pull-ups'];
 
 function getPR(exerciseId) {
     const lowerIsBetter = LOWER_IS_BETTER.includes(exerciseId);
-    let bestWeight = lowerIsBetter ? Infinity : 0;
+    let bestVal = lowerIsBetter ? Infinity : 0;
+    let bestWeightRaw = null;
     let bestReps = null;
-    let found = false;
     for (let i = 0; i < history.length; i++) {
         const session = history[i];
         if (session.weights && session.weights[exerciseId]) {
             const w = parseFloat(session.weights[exerciseId]);
-            if (lowerIsBetter ? w < bestWeight : w > bestWeight) {
-                bestWeight = w;
+            if (lowerIsBetter ? w < bestVal : w > bestVal) {
+                bestVal = w;
+                bestWeightRaw = session.weights[exerciseId];
                 bestReps = session.reps ? session.reps[exerciseId] : null;
-                found = true;
             }
         }
     }
-    return found ? { weight: bestWeight, reps: bestReps } : null;
+    return bestWeightRaw ? { weight: bestWeightRaw, reps: bestReps } : null;
 }
 
 const SCHEDULE = {
