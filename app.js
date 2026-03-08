@@ -183,6 +183,15 @@ function getLastData(exerciseId) {
 // For assisted exercises (pull-ups), lower weight = stronger (less assistance)
 const LOWER_IS_BETTER = ['pull-ups'];
 
+// Parse weight value - handles "8-48" format (setting-lbs), returns the lbs portion
+function parseWeight(val) {
+    const str = String(val);
+    if (str.includes('-')) {
+        return parseFloat(str.split('-').pop());
+    }
+    return parseFloat(str);
+}
+
 function getPR(exerciseId) {
     const lowerIsBetter = LOWER_IS_BETTER.includes(exerciseId);
     let bestVal = lowerIsBetter ? Infinity : 0;
@@ -191,7 +200,7 @@ function getPR(exerciseId) {
     for (let i = 0; i < history.length; i++) {
         const session = history[i];
         if (session.weights && session.weights[exerciseId]) {
-            const w = parseFloat(session.weights[exerciseId]);
+            const w = parseWeight(session.weights[exerciseId]);
             if (lowerIsBetter ? w < bestVal : w > bestVal) {
                 bestVal = w;
                 bestWeightRaw = session.weights[exerciseId];
@@ -595,7 +604,7 @@ function checkPRs(currentSession) {
     const prs = [];
 
     currentSession.completed.forEach(id => {
-        const currentWeight = parseFloat(currentSession.weights[id]);
+        const currentWeight = parseWeight(currentSession.weights[id]);
         if (!currentWeight) return;
 
         const lowerIsBetter = LOWER_IS_BETTER.includes(id);
@@ -603,7 +612,7 @@ function checkPRs(currentSession) {
         let found = false;
         history.forEach(h => {
             if (h.weights && h.weights[id]) {
-                const w = parseFloat(h.weights[id]);
+                const w = parseWeight(h.weights[id]);
                 if (lowerIsBetter ? w < bestWeight : w > bestWeight) {
                     bestWeight = w;
                     found = true;
