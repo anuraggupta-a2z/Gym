@@ -74,6 +74,7 @@ document.addEventListener('DOMContentLoaded', () => {
     renderApp();
     setupEventListeners();
     registerServiceWorker();
+    checkAutoExport();
 });
 
 function loadState() {
@@ -830,7 +831,7 @@ function hideHistory() {
     document.getElementById('historyModal').classList.remove('active');
 }
 
-function exportData() {
+function exportData(isAuto = false) {
     const data = {
         history: history,
         weeklyStats: weeklyStats,
@@ -848,7 +849,27 @@ function exportData() {
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
-    showToast('Data exported successfully! 💾');
+
+    localStorage.setItem('blueprint-last-export', new Date().toISOString());
+    showToast(isAuto ? 'Weekly auto-backup saved! 💾' : 'Data exported successfully! 💾');
+}
+
+function checkAutoExport() {
+    if (history.length === 0) return;
+
+    const lastExport = localStorage.getItem('blueprint-last-export');
+    const now = new Date();
+
+    if (!lastExport) {
+        // First time — record now, don't force an immediate export
+        localStorage.setItem('blueprint-last-export', now.toISOString());
+        return;
+    }
+
+    const daysSinceExport = (now - new Date(lastExport)) / (1000 * 60 * 60 * 24);
+    if (daysSinceExport >= 7) {
+        exportData(true);
+    }
 }
 
 function importData(e) {
