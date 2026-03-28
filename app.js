@@ -202,7 +202,10 @@ function getPR(exerciseId) {
         const session = history[i];
         if (session.weights && session.weights[exerciseId]) {
             const w = parseWeight(session.weights[exerciseId]);
-            if (lowerIsBetter ? w < bestVal : w > bestVal) {
+            const r = session.reps ? parseInt(session.reps[exerciseId]) || 0 : 0;
+            const isBetter = lowerIsBetter ? w < bestVal : w > bestVal;
+            const isTied = w === bestVal && r > (parseInt(bestReps) || 0);
+            if (isBetter || isTied) {
                 bestVal = w;
                 bestWeightRaw = session.weights[exerciseId];
                 bestReps = session.reps ? session.reps[exerciseId] : null;
