@@ -1,4 +1,4 @@
-const CACHE_NAME = 'blueprint-strength-v20';
+const CACHE_NAME = 'blueprint-strength-v21';
 const ASSETS = [
     './',
     './index.html',
@@ -29,26 +29,38 @@ self.addEventListener('activate', event => {
     );
 });
 
-// Fetch event - serve from cache, fallback to network
+// Fetch event
 self.addEventListener('fetch', event => {
+    const req = event.request;
+    if (req.method !== 'GET') return;
+
+    // Page navigations: network-first so new deploys apply immediately,
+    // falling back to the cached shell when offline.
+    if (req.mode === 'navigate') {
+        event.respondWith(
+            fetch(req)
+                .then(response => {
+                    const copy = response.clone();
+                    caches.open(CACHE_NAME).then(cache => cache.put(req, copy));
+                    return response;
+                })
+                .catch(() => caches.match(req).then(r => r || caches.match('./index.html')))
+        );
+        return;
+    }
+
+    // Static assets: stale-while-revalidate - serve cache instantly,
+    // refresh in the background so the next load is up to date.
     event.respondWith(
-        caches.match(event.request)
-            .then(response => {
-                if (response) {
-                    return response;
+        caches.match(req).then(cached => {
+            const network = fetch(req).then(response => {
+                if (response && response.status === 200 && response.type === 'basic') {
+                    const copy = response.clone();
+                    caches.open(CACHE_NAME).then(cache => cache.put(req, copy));
                 }
-                return fetch(event.request).then(response => {
-                    // Don't cache non-successful responses
-                    if (!response || response.status !== 200 || response.type !== 'basic') {
-                        return response;
-                    }
-                    // Clone and cache the response
-                    const responseToCache = response.clone();
-                    caches.open(CACHE_NAME).then(cache => {
-                        cache.put(event.request, responseToCache);
-                    });
-                    return response;
-                });
-            })
+                return response;
+            }).catch(() => cached);
+            return cached || network;
+        })
     );
 });

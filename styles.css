@@ -320,6 +320,15 @@ body {
     white-space: nowrap;
 }
 
+/* Inputs must be >=16px or iOS Safari auto-zooms the page on focus */
+.weight-input,
+.reps-input,
+.cardio-field input,
+.edit-name-input,
+.edit-sets-input {
+    font-size: 16px;
+}
+
 /* Actions */
 .actions {
     position: fixed;
