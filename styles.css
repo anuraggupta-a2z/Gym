@@ -277,6 +277,49 @@ body {
     font-size: 0.75rem;
 }
 
+/* Cardio treadmill settings */
+.cardio-settings {
+    display: flex;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.cardio-field {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+}
+
+.cardio-field input {
+    width: 56px;
+    padding: 8px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    color: var(--text-primary);
+    font-size: 0.875rem;
+    text-align: center;
+    font-family: inherit;
+    transition: all 0.2s ease;
+}
+
+.cardio-field input:focus {
+    outline: none;
+    border-color: var(--accent-blue);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.cardio-field input::placeholder {
+    color: var(--text-muted);
+}
+
+.cardio-field-label {
+    font-size: 0.625rem;
+    color: var(--text-muted);
+    white-space: nowrap;
+}
+
 /* Actions */
 .actions {
     position: fixed;

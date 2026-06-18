@@ -60,6 +60,7 @@ let cardioChecklist = [
 
 let cardioState = {
     completed: {},
+    settings: {}, // per-item treadmill settings: { [id]: { speed, incline } }
     zone2Minutes: 37,
     vigorousMinutes: 12
 };
@@ -105,6 +106,7 @@ function loadState() {
     // Initialize cardio state
     cardioChecklist.forEach(item => {
         cardioState.completed[item.id] = false;
+        cardioState.settings[item.id] = { speed: '', incline: '' };
     });
 
     // Load custom exercise names
@@ -376,20 +378,37 @@ function renderCardio(container) {
                 <span class="section-title">Protocol</span>
             </div>
             
-            ${cardioChecklist.map(item => `
-                <div class="exercise ${cardioState.completed[item.id] ? 'completed' : ''}" data-id="${item.id}">
+            ${cardioChecklist.map(item => {
+            const s = (cardioState.settings && cardioState.settings[item.id]) || { speed: '', incline: '' };
+            return `
+                <div class="exercise cardio-exercise ${cardioState.completed[item.id] ? 'completed' : ''}" data-id="${item.id}">
                     <label class="checkbox-wrapper">
                         <input type="checkbox" data-id="${item.id}" ${cardioState.completed[item.id] ? 'checked' : ''}>
                         <span class="checkbox-custom"></span>
                     </label>
                     <div class="exercise-info">
                         ${isEditMode
-            ? `<input type="text" class="edit-name-input" data-type="cardio" data-id="${item.id}" value="${item.name}">`
-            : `<div class="exercise-name">${item.name}</div>`
-        }
+                ? `<input type="text" class="edit-name-input" data-type="cardio" data-id="${item.id}" value="${item.name}">`
+                : `<div class="exercise-name">${item.name}</div>`
+            }
                     </div>
+                    ${isEditMode ? '' : `
+                    <div class="cardio-settings">
+                        <div class="cardio-field">
+                            <input type="text" inputmode="decimal" class="cardio-speed-input" data-id="${item.id}"
+                                placeholder="0.0" value="${s.speed || ''}">
+                            <span class="cardio-field-label">mph</span>
+                        </div>
+                        <div class="cardio-field">
+                            <input type="text" inputmode="decimal" class="cardio-incline-input" data-id="${item.id}"
+                                placeholder="0.0" value="${s.incline || ''}">
+                            <span class="cardio-field-label">% incline</span>
+                        </div>
+                    </div>
+                    `}
                 </div>
-            `).join('')}
+            `;
+        }).join('')}
 
         </div>
     `;
@@ -472,6 +491,14 @@ function setupEventListeners() {
         } else if (e.target.classList.contains('reps-input')) {
             const id = e.target.dataset.id;
             workoutState[id].reps = e.target.value;
+        } else if (e.target.classList.contains('cardio-speed-input')) {
+            const id = e.target.dataset.id;
+            if (!cardioState.settings[id]) cardioState.settings[id] = { speed: '', incline: '' };
+            cardioState.settings[id].speed = e.target.value;
+        } else if (e.target.classList.contains('cardio-incline-input')) {
+            const id = e.target.dataset.id;
+            if (!cardioState.settings[id]) cardioState.settings[id] = { speed: '', incline: '' };
+            cardioState.settings[id].incline = e.target.value;
         }
         saveProgress();
     });
@@ -609,24 +636,34 @@ function checkPRs(currentSession) {
 
     currentSession.completed.forEach(id => {
         const currentWeight = parseWeight(currentSession.weights[id]);
-        if (!currentWeight) return;
+        if (isNaN(currentWeight)) return;
+        const currentReps = currentSession.reps ? parseInt(currentSession.reps[id]) || 0 : 0;
 
         const lowerIsBetter = LOWER_IS_BETTER.includes(id);
         let bestWeight = lowerIsBetter ? Infinity : 0;
+        let bestReps = 0;
         let found = false;
         history.forEach(h => {
             if (h.weights && h.weights[id]) {
                 const w = parseWeight(h.weights[id]);
-                if (lowerIsBetter ? w < bestWeight : w > bestWeight) {
+                if (isNaN(w)) return;
+                const r = h.reps ? parseInt(h.reps[id]) || 0 : 0;
+                // Same weight + more reps also counts as a better effort (matches getPR)
+                const beatsWeight = lowerIsBetter ? w < bestWeight : w > bestWeight;
+                const tiesWeightMoreReps = w === bestWeight && r > bestReps;
+                if (beatsWeight || tiesWeightMoreReps) {
                     bestWeight = w;
+                    bestReps = r;
                     found = true;
                 }
             }
         });
 
-        const isBetter = lowerIsBetter
+        const beatsWeight = lowerIsBetter
             ? currentWeight < bestWeight
             : currentWeight > bestWeight;
+        const tiesWeightMoreReps = currentWeight === bestWeight && currentReps > bestReps;
+        const isBetter = beatsWeight || tiesWeightMoreReps;
 
         if (isBetter && found) {
             const ex = exercises.find(e => e.id === id);
@@ -657,10 +694,20 @@ function saveCardio() {
     const zone2Credit = 37;
     const vigorousCredit = 12;
 
+    // Capture treadmill settings only for completed items that have any value
+    const settings = {};
+    completedItems.forEach(id => {
+        const s = cardioState.settings && cardioState.settings[id];
+        if (s && (s.speed || s.incline)) {
+            settings[id] = { speed: s.speed || '', incline: s.incline || '' };
+        }
+    });
+
     const session = {
         type: 'cardio',
         date: new Date().toISOString(),
         completed: completedItems,
+        settings: settings,
         stats: {
             zone2: zone2Credit,
             vigorous: vigorousCredit
@@ -675,9 +722,10 @@ function saveCardio() {
     history.push(session);
     localStorage.setItem('blueprint-history', JSON.stringify(history));
 
-    // Reset cardio checkmarks
+    // Reset cardio checkmarks and treadmill settings
     cardioChecklist.forEach(item => {
         cardioState.completed[item.id] = false;
+        cardioState.settings[item.id] = { speed: '', incline: '' };
     });
 
     renderApp('cardio');
@@ -720,10 +768,24 @@ function showHistory() {
                 .filter(Boolean);
 
             if (session.type === 'cardio') {
+                const settingEntries = Object.entries(session.settings || {})
+                    .map(([id, s]) => {
+                        const item = cardioChecklist.find(c => c.id === id);
+                        const label = item ? item.name : id;
+                        const parts = [];
+                        if (s.speed) parts.push(`${s.speed} mph`);
+                        if (s.incline) parts.push(`${s.incline}%`);
+                        return parts.length ? `${label}: ${parts.join(' @ ')}` : null;
+                    })
+                    .filter(Boolean);
+
                 return `
                     <div class="history-item">
                         <div class="history-date">🏃 ${dateStr}</div>
                         <div class="history-stats">Zone 2: ${session.stats.zone2}m • Vigorous: ${session.stats.vigorous}m</div>
+                        ${settingEntries.length > 0 ? `
+                            <div class="history-exercises">${settingEntries.join(' • ')}</div>
+                        ` : ''}
                     </div>
                 `;
             }
