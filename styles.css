@@ -345,6 +345,8 @@ body {
 
 .btn {
     flex: 1;
+    min-width: 0;
+    white-space: nowrap;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -357,6 +359,17 @@ body {
     font-family: inherit;
     cursor: pointer;
     transition: all 0.2s ease;
+}
+
+/* Compact icon-only buttons (History, Settings) */
+.btn-compact {
+    flex: 0 0 auto;
+    width: 52px;
+    padding: 14px 0;
+}
+
+.btn-compact .btn-icon {
+    font-size: 1.25rem;
 }
 
 .btn-primary {
